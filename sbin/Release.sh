@@ -33,7 +33,7 @@ npm install
 # Examples: OpenJDK8_x64_Windows_201813060547.zip, 
 #           OpenJDK8_x64_LinuxLH_201813060547.tar.gz, 
 #           OpenJDK10_aarch64_Linux_201813060547.tar.gz.sha256.txt,
-#           OpenJDKamber_x64_Linux_201813061304.tar.gz	
+#           OpenJDKamber_x64_Linux_201813061304.tar.gz
 for file in OpenJDK*
 do
 #                            1)ARCH         2)OS           3)TS_OR_TAG    4)EXTENSION 5) SHA_EXT 
