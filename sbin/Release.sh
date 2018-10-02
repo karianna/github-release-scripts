@@ -29,46 +29,47 @@ fi
 
 npm install
 # Expect a naming convention for build artifacts to follow this pattern:
-# OpenJDK<version>_<arch>_<os>_<timestampOrTag>.<extension>
+# OpenJDK<version>_[jdk|jre]_<arch>_<os>_<timestampOrTag>.<extension>
 # Examples: OpenJDK8_x64_Windows_201813060547.zip, 
 #           OpenJDK8_x64_LinuxLH_201813060547.tar.gz, 
 #           OpenJDK10_aarch64_Linux_201813060547.tar.gz.sha256.txt,
 #           OpenJDKamber_x64_Linux_201813061304.tar.gz
 for file in OpenJDK*
 do
-#                            1)ARCH         2)OS           3)TS_OR_TAG    4)EXTENSION 5) SHA_EXT 
-  regex="OpenJDK[a-zA-Z0-9]+_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_([a-zA-Z0-9]+).(tar.gz|zip)(.sha256.txt)?";
+#                            1)jdk_jre   2)ARCH         3)OS           4)TS_OR_TAG    5)EXTENSION 6) SHA_EXT
+  regex="OpenJDK[a-zA-Z0-9]+_?(jdk_|jre_)([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_([a-zA-Z0-9]+).(tar.gz|zip)(.sha256.txt)?";
   echo "Processing $file";
   if [[ $file =~ $regex ]]; 
   then 
-    ARCH=${BASH_REMATCH[1]};
-    OS=${BASH_REMATCH[2]};
-    TS_OR_TAG=${BASH_REMATCH[3]};
-    EXTENSION=${BASH_REMATCH[4]};
-    SHA_EXT=${BASH_REMATCH[5]};
-    echo "version:${VERSION} arch:${ARCH} os:${OS} timestampOrTag:${TS_OR_TAG} extension:${EXTENSION} sha_ext:${SHA_EXT}"; 
+    JDK_JRE=${BASH_REMATCH[1]};
+    ARCH=${BASH_REMATCH[2]};
+    OS=${BASH_REMATCH[3]};
+    TS_OR_TAG=${BASH_REMATCH[4]};
+    EXTENSION=${BASH_REMATCH[5]};
+    SHA_EXT=${BASH_REMATCH[6]};
+    echo "version:${VERSION} jdk_jre:${JDK_JRE} arch:${ARCH} os:${OS} timestampOrTag:${TS_OR_TAG} extension:${EXTENSION} sha_ext:${SHA_EXT}";
   fi
   if [ "$EXTENSION" == "zip" -a "$SHA_EXT" == ".sha256.txt" ]; 
   then
     FILENAME=`cat $file | awk  '{print $2}'`
     if [ "${REPO}" == "releases" ]; then
-      sed -i -e "s/${FILENAME}/Open${VERSION}_${ARCH}_${OS}_${TAG}.${EXTENSION}/g" $file
+      sed -i -e "s/${FILENAME}/Open${VERSION}_{$JDK_JRE}${ARCH}_${OS}_${TAG}.${EXTENSION}/g" $file
     else
-      sed -i -e "s/${FILENAME}/Open${VERSION}_${ARCH}_${OS}_${TS_OR_TAG}.${EXTENSION}/g" $file
+      sed -i -e "s/${FILENAME}/Open${VERSION}_{$JDK_JRE}${ARCH}_${OS}_${TS_OR_TAG}.${EXTENSION}/g" $file
     fi
   fi
   if [ "$SHA_EXT" == ".sha256.txt" ]; 
   then
     if [ "${REPO}" == "releases" ]; then
-      mv $file "Open${VERSION}_${ARCH}_${OS}_${TAG}${SHA_EXT}"
+      mv $file "Open${VERSION}_{$JDK_JRE}${ARCH}_${OS}_${TAG}${SHA_EXT}"
     else
-      mv $file "Open${VERSION}_${ARCH}_${OS}_${TS_OR_TAG}${SHA_EXT}"
+      mv $file "Open${VERSION}_{$JDK_JRE}${ARCH}_${OS}_${TS_OR_TAG}${SHA_EXT}"
     fi
   else
     if [ "${REPO}" == "releases" ]; then
-      mv $file "Open${VERSION}_${ARCH}_${OS}_${TAG}.${EXTENSION}"
+      mv $file "Open${VERSION}_{$JDK_JRE}${ARCH}_${OS}_${TAG}.${EXTENSION}"
     else    
-      mv $file "Open${VERSION}_${ARCH}_${OS}_${TS_OR_TAG}.${EXTENSION}"
+      mv $file "Open${VERSION}_{$JDK_JRE}${ARCH}_${OS}_${TS_OR_TAG}.${EXTENSION}"
     fi
   fi
 done
