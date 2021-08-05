@@ -31,6 +31,18 @@ if [ "$RELEASE" != "true" ] && [ -z "${TIMESTAMP}" ]; then
     exit 1
 fi
 
+if [ -z "${GITHUB_SERVER}" ]; then
+   server=""
+else
+   server="--server \"${GITHUB_SERVER}\""
+fi
+
+if [ -z "${GITHUB_ORG}" ]; then
+   org=""
+else
+   org="--org \"${GITHUB_ORG}\""
+fi
+
 # Rename to ensure a consistent timestamp across release
 for file in OpenJDK*
 do
@@ -73,9 +85,12 @@ if [ "$RELEASE" == "true" ]; then
   description="Official Release of $TAG"
   RELEASE_OPTION="--release"
 else
+  TAG="${TAG}-beta"
   description="Nightly Build of $TAG"
 fi
 
-cd adopt-github-release
-chmod +x gradlew
-GRADLE_USER_HOME=./gradle-cache ./gradlew --no-daemon run --args="--version \"${VERSION}\" --tag \"${TAG}\" --description \"${description}\" $RELEASE_OPTION $files"
+if [ "$DRY_RUN" == "false" ]; then
+    cd adopt-github-release
+    chmod +x gradlew
+    GRADLE_USER_HOME=./gradle-cache ./gradlew --no-daemon run --args="--version \"${VERSION}\" --tag \"${TAG}\" --description \"${description}\" ${server} ${org} $RELEASE_OPTION $files"
+fi

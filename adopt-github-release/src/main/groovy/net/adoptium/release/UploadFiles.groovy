@@ -1,4 +1,4 @@
-package net.adoptopenjdk.release
+package net.adoptium.release
 
 import groovy.cli.picocli.CliBuilder
 import groovy.cli.picocli.OptionAccessor
@@ -17,27 +17,28 @@ class UploadAdoptReleaseFiles {
     private final boolean release
     private final List<File> files
     private final String version
+    private final String server
+    private final String org
 
-    UploadAdoptReleaseFiles(String tag, String description, boolean release, String version, List<File> files) {
+    UploadAdoptReleaseFiles(String tag, String description, boolean release, String version, String server, String org, List<File> files) {
         this.tag = tag
         this.description = description
         this.release = release
         this.files = files
         this.version = version
+        this.server = server
+        this.org = org
     }
 
     void release() {
         def grouped = files.groupBy {
             switch (it.getName()) {
-                case ~/.*dragonwell.*/: "dragonwell"; break;
-                default: "adopt"; break
+                case ~/.*hotspot.*/: "adopt"; break;
             }
         }
-        grouped.each {entry ->
-            GHRepository repo = getRepo(entry.getKey())
-            GHRelease release = getRelease(repo)
-            uploadFiles(release, entry.getValue())
-        }
+        GHRepository repo = getRepo("adopt")
+        GHRelease release = getRelease(repo)
+        uploadFiles(release, grouped.get("adopt"))
     }
 
     private GHRepository getRepo(String vendor) {
@@ -47,7 +48,8 @@ class UploadAdoptReleaseFiles {
             System.exit(1)
         }
 
-        GitHub github = GitHub.connectUsingOAuth(token)
+        println("Using Github server:'${server}'")
+        GitHub github = GitHub.connectUsingOAuth(server, token)
 
         github
                 .setConnector(new ImpatientHttpConnector(new HttpConnector() {
@@ -58,10 +60,13 @@ class UploadAdoptReleaseFiles {
                         (int) TimeUnit.SECONDS.toMillis(120),
                         (int) TimeUnit.SECONDS.toMillis(120)))
 
-        def repoName = "AdoptOpenJDK/open${version}-binaries"
+        println("Using Github org:'${org}'")
+        // jdk11 => 11
+        def numberVersion = version.replaceAll(/[^0-9]/, "")
+        def repoName = "${org}/temurin${numberVersion}-binaries"
 
         if (vendor != "adopt") {
-            repoName = "AdoptOpenJDK/open${version}-${vendor}-binaries"
+            repoName = "${org}/open${version}-${vendor}-binaries"
         }
 
         return github.getRepository(repoName)
@@ -111,6 +116,8 @@ static void main(String[] args) {
             options.d,
             options.r,
             options.v,
+            options.s,
+            options.o,
             files,
     ).release()
 }
@@ -126,6 +133,8 @@ private OptionAccessor parseArgs(String[] args) {
                 d longOpt: 'description', type: String, args: 1, 'Release description'
                 r longOpt: 'release', 'Is a release build'
                 h longOpt: 'help', 'Show usage information'
+                s longOpt: 'server', type: String, args: 1, optionalArg: true, defaultValue: 'https://api.github.com', 'Github server'
+                o longOpt: 'org', type: String, args: 1, optionalArg: true, defaultValue: 'adoptium', 'Github org'
             }
 
     def options = cliBuilder.parse(args)
